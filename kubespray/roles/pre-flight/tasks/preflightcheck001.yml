@@ -1,0 +1,13 @@
+---
+- name: Generate host entries
+  set_fact:
+    host_entries: |
+      {% for host in groups['all'] %}
+      {{ hostvars[host].ansible_host }} {{ host }}
+      {% endfor %}
+
+- name: Insert host entries into /etc/hosts
+  blockinfile:
+    dest: /etc/hosts
+    block: "{{ host_entries }}"
+  when: host_entries is defined

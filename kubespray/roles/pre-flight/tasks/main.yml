@@ -1,0 +1,9 @@
+---
+- name: Distribute host names
+  import_tasks: "preflightcheck001.yml"
+
+- name: Disable firewall/apparmor
+  import_tasks: "preflightcheck002.yml"
+
+- name: Set Selinux
+  import_tasks: "preflightcheck003.yml"

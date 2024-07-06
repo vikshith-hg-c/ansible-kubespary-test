@@ -1,0 +1,13 @@
+---
+- name: Kubeadm | reload systemd
+  become: true
+  systemd:
+    daemon_reload: true
+  listen: Kubeadm | restart kubelet
+
+- name: Kubeadm | reload kubelet
+  become: true
+  service:
+    name: kubelet
+    state: restarted
+  listen: Kubeadm | restart kubelet

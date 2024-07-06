@@ -1,0 +1,52 @@
+---
+- name: Check SELinux status
+  command: getenforce
+  register: selinux_status
+  changed_when: false
+
+- name: Set SELinux to disabled mode (CentOS/RedHat)
+  ansible.posix.selinux:
+    policy: targeted
+    state: disabled
+  when: 
+    - ansible_os_family == "RedHat"
+    - selinux_status.stdout != "Disabled"
+  register: sechanged_redhat
+
+- name: Reload SELinux policy (CentOS/RedHat)
+  command: "setenforce 0"
+  when: 
+    - ansible_os_family == "RedHat"
+    - selinux_status.stdout != "Disabled"
+
+- name: Set SELinux to permissive mode (Ubuntu/Debian)
+  command: "setenforce 0"
+  when: 
+    - ansible_os_family == "Debian"
+    - selinux_status.stdout != "Disabled"
+  register: sechanged_debian
+
+- name: Modify SELinux configuration (Ubuntu/Debian)
+  lineinfile:
+    path: /etc/selinux/config
+    regexp: '^SELINUX='
+    line: 'SELINUX=disabled'
+  when: 
+    - ansible_os_family == "Debian"
+    - selinux_status.stdout != "Disabled"
+  register: selinux_config_changed
+
+- name: Reboot the system to apply SELinux changes
+  reboot:
+    msg: "Rebooting to apply SELinux disabled mode"
+    reboot_timeout: 200  # This is the timeout for the reboot task, not the wait time
+  when: 
+    - ansible_os_family in ["RedHat", "Debian"]
+    - (ansible_os_family == "RedHat" and sechanged_redhat.changed) or (ansible_os_family == "Debian" and (sechanged_debian.changed or selinux_config_changed.changed))
+
+- name: Wait for system to become reachable
+  wait_for_connection:
+    timeout: 200  # Wait for 3 minutes and 20 seconds
+  when: 
+    - ansible_os_family in ["RedHat", "Debian"]
+    - (ansible_os_family == "RedHat" and sechanged_redhat.changed) or (ansible_os_family == "Debian" and (sechanged_debian.changed or selinux_config_changed.changed))

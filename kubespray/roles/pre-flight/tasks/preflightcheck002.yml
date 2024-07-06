@@ -1,0 +1,14 @@
+---
+- name: Disable firewalld
+  service:
+    name: firewalld
+    state: stopped
+    enabled: false
+  when: ansible_distribution in ["CentOS", "RedHat"]
+
+- name: Disable apparmor
+  service:
+    name: apparmor
+    state: stopped
+    enabled: false
+  when: ansible_distribution in ["Ubuntu", "Debian"]
